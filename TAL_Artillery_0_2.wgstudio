@@ -1,0 +1,232 @@
+{
+  "version": 1,
+  "projectName": "TAL_Artillery",
+  "textures": [
+    {
+      "id": "tex-default",
+      "name": "Display",
+      "type": "int",
+      "fill": "empty",
+      "size": {
+        "x": 512,
+        "y": 256,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "SIZEX",
+        "y": "SIZEY",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "0ce96281-8c6f-4830-bd4e-937144a403c2",
+      "name": "CurveData",
+      "type": "float",
+      "fill": "empty",
+      "size": {
+        "x": 6,
+        "y": 180,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "NBPARAMCURVE",
+        "y": "NBCURVE",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "acab4bac-da45-4303-88be-f23b8db35de3",
+      "name": "TerrainData",
+      "type": "int",
+      "fill": "empty",
+      "size": {
+        "x": 2,
+        "y": 8,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "2",
+        "y": "NBTERRAINPOINT",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "5abcbbd6-9df6-4fe4-ab14-a51f994e8dd6",
+      "name": "TerrainMatrix",
+      "type": "int",
+      "fill": "empty",
+      "size": {
+        "x": 512,
+        "y": 256,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "SIZEX",
+        "y": "SIZEY",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "d4138b69-1b0f-45cd-884b-f0d79be199a9",
+      "name": "Random",
+      "type": "uint",
+      "fill": "random",
+      "size": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "1",
+        "y": "1",
+        "z": "1"
+      },
+      "values": []
+    }
+  ],
+  "shaders": [
+    {
+      "id": "4b21c4f4-130f-4927-8494-5e3fd1e4df9c",
+      "name": "Init",
+      "workgroup": {
+        "x": 8,
+        "y": 8,
+        "z": 1
+      },
+      "code": "@compute @workgroup_size(SIZEWORKX, SIZEWORKY, 1)\nfn Init(@builtin(global_invocation_id) gid : vec3<u32>) {\n\t\tif (step == 0){\n\t\t\t\t//terrainInit(gid);\n\t\t\t\tcurveInit();\n\t\t}\n}\n\nfn curveInit() {\n\t\t// origine x, origine y, angle, velocité, couleur, temps de départ\n\t\tvar y : i32 = 0;\n\n\t\tif (GAMETYPE==0){\n\t\t\t\tCurveData[CDAccess(0,y)] = 0;\n\t\t\t\tCurveData[CDAccess(1,y)] = 0;\n\t\t\t\tCurveData[CDAccess(2,y)] = radians(45);\n\t\t\t\tCurveData[CDAccess(3,y)] = 50;\n\t\t\t\tCurveData[CDAccess(4,y)] = 0xff0000;\n\t\t\t\tCurveData[CDAccess(5,y)] = 0;\n\t\t\t\ty++;\n\n\t\t\t\tCurveData[CDAccess(0,1)] = 0;\n\t\t\t\tCurveData[CDAccess(1,1)] = 0;\n\t\t\t\tCurveData[CDAccess(2,1)] = radians(30);\n\t\t\t\tCurveData[CDAccess(3,1)] = 60;\n\t\t\t\tCurveData[CDAccess(4,1)] = 0x00ff00;\n\t\t\t\tCurveData[CDAccess(5,y)] = 30;\n\t\t\t\ty++;\n\n\t\t\t\tCurveData[CDAccess(0,y)] = 0;\n\t\t\t\tCurveData[CDAccess(1,y)] = 0;\n\t\t\t\tCurveData[CDAccess(2,y)] = radians(60);\n\t\t\t\tCurveData[CDAccess(3,y)] = 70;\n\t\t\t\tCurveData[CDAccess(4,y)] = 0x0000ff;\n\t\t\t\tCurveData[CDAccess(5,y)] = 60;\n\t\t\t\ty++;\n\t\t}else{\n\t\t\t\tfor (var i : i32 = 0; i < NBCURVE; i++){\n\t\t\t\t\t\tCurveData[CDAccess(0,y)] = SIZEX/2;\n\t\t\t\t\t\tCurveData[CDAccess(1,y)] = SIZEY/2;\n\t\t\t\t\t\tCurveData[CDAccess(2,y)] = radians(f32(i*(360/NBCURVE)));\n\t\t\t\t\t\tCurveData[CDAccess(3,y)] = 55;\n\t\t\t\t\t\tCurveData[CDAccess(4,y)] = 0xffffff;\n\t\t\t\t\t\tCurveData[CDAccess(5,y)] = f32(i);\n\t\t\t\ty++;\n\t\t\t\t}\n\t\t}\n}\n\nfn terrainInit(gid : vec3<u32>) {\n\t\tfor (var i : i32 = 0; i < NBTERRAINPOINT; i++){\n\t\t\t\tTerrainData[TDAccess(0,i)] = ((SIZEX/(NBTERRAINPOINT-1))*i) + 1;\n\t\t\t\tTerrainData[TDAccess(1,i)] =\ti32( alea(u32(i), gid.y,Random[0] )%(SIZEY) )/2;\n\t\t}\n}\n\nfn crossProduct(x1 : i32, x2 : i32, x3 : i32, y1 : i32, y2 : i32, y3 : i32) -> i32 {\n\t\tvar v1 : vec2<i32>;\n\t\tv1[0] = x1 - x2;\n\t\tv1[1] = y1 - y2;\n\t\tvar v2 : vec2<i32>;\n\t\tv2[0] = x2 - x3;\n\t\tv2[1] = y2 - y3;\n\n\t\treturn  v1[0]*v2[1] - v1[1]*v2[0];\n}",
+      "bufferIds": [
+        "tex-default",
+        "0ce96281-8c6f-4830-bd4e-937144a403c2",
+        "acab4bac-da45-4303-88be-f23b8db35de3",
+        "d4138b69-1b0f-45cd-884b-f0d79be199a9",
+        "5abcbbd6-9df6-4fe4-ab14-a51f994e8dd6"
+      ]
+    },
+    {
+      "id": "efcd35c5-52fe-4ffa-af63-6cde3893f240",
+      "name": "DisplayFunc",
+      "workgroup": {
+        "x": 8,
+        "y": 8,
+        "z": 1
+      },
+      "code": "@compute @workgroup_size(SIZEWORKX, SIZEWORKY, 1)\nfn DisplayFunc(@builtin(global_invocation_id) gid : vec3<u32>) {\n\t\tcurveDisplay();\n\t\tTerrainDisplay();\n}\n\nfn curveDisplay() {\n\t\tfor (var i :i32 = 0; i < NBCURVE; i++){\n\t\t\t\tvar x0 : i32 = i32(CurveData[CDAccess(0,i)]);\n\t\t\t\tvar y0 : i32 = i32(CurveData[CDAccess(1,i)]);\n\t\t\t\tvar angle : f32 = CurveData[CDAccess(2,i)];\n\t\t\t\tvar velocity : u32 = u32(CurveData[CDAccess(3,i)]);\n\t\t\t\tvar color : i32 = i32(CurveData[CDAccess(4,i)]);\n\t\t\t\tvar start : u32 = u32(CurveData[CDAccess(5,i)]);\n\n\t\t\t\tvar isComplete : bool = false;\n\n\t\t\t\tlet curX = nextX(x0, velocity, angle, step - start);\n\t\t\t\tlet curY = nextY(y0, velocity, angle, step - start );\n\t\t\n\t\t\t\tif (step > start){\n\t\t\t\t\t\tif (step > 0 && !isComplete){\n\t\t\t\t\t\t\t\tisComplete = line(nextX(x0, velocity, angle,(step - start) - 1), curX,  nextY(y0, velocity, angle,(step - start) - 1), curY, color);\n\t\t\t\t\t\t}\n\t\t\t\t}\n\t\t}\n}\n\nfn TerrainDisplay() {\n\t\tfor (var i : i32 = 0; i < NBTERRAINPOINT - 1; i++){\n\t\t\t\tline(TerrainData[TDAccess(0,i)], TerrainData[TDAccess(0,i+1)],TerrainData[TDAccess(1,i)], TerrainData[TDAccess(1,i+1)],0x008000);\n\t\t}\t\t\t\n}",
+      "bufferIds": [
+        "tex-default",
+        "0ce96281-8c6f-4830-bd4e-937144a403c2",
+        "acab4bac-da45-4303-88be-f23b8db35de3",
+        "5abcbbd6-9df6-4fe4-ab14-a51f994e8dd6"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "id": "6410ae56-c9f1-4117-b3aa-c376ffc0479b",
+      "name": "Bibliothèque 1",
+      "code": "fn nextX(x0: i32, v0 : u32, angle : f32, t : u32) -> i32 {\n\t\treturn x0 + i32(f32(v0*t)*cos(angle));\n}\n\nfn nextY(y0 : i32, v0 : u32, angle : f32, t : u32) -> i32 {\n\treturn y0 + i32(f32(v0*t)*sin(angle) - 0.5*g*f32(t*t));\n}\n\nfn line(x0 : i32, x1 : i32, y0 : i32, y1 : i32, col : i32) -> bool{\n    let dx = abs(x1 - x0);\n    let dy = abs(y1 - y0);\n    var sx = 0;\n    var sy = 0;\n    if (x0 < x1){ sx = 1; } else { sx = -1; }\n    if (y0 < y1){ sy = 1; } else { sy = -1; }\n    var err = dx - dy;\n    var x = x0;\n    var y = y0;\n    while (x != x1 && y != y1) {\n\t\t\t\tif (x >= 0 && x < SIZEX && y >= 0){\n    \t\t\t Display[y*SIZEX + x] = col;\n       \t\t var e2 = 2 * err;\n        \t\tif (e2 > -dy) {\n           \t\t err -= dy;\n           \t\t x += sx;\n        \t\t}\n       \t\t if (e2 < dx) {\n            \t\terr += dx;\n            \t\ty += sy;\n         \t\t}\n\t\t\t\t}else{\n\t\t\t\t\t\treturn false;\n\t\t\t\t}\n     }\n\t\treturn true;\n}\n\nfn CDAccess(x : i32, y : i32) -> i32 {\n\t\treturn y*NBPARAMCURVE + x;\n}\n\nfn TDAccess(x : i32, y : i32) -> i32 {\n\t\treturn y*2 + x;\n}\n\nfn TMAccess(x : i32, y : i32) -> i32 {\n\t\treturn y*SIZEX + x;\n}\n\nfn alea(x: u32, y: u32, step: u32) -> u32 {\n        var h: u32 = x;\n        h = h * 374761393u + y * 668265263u + step * 362437u;\n        h = (h ^(h >> 13u)) * 1274126177u;\n        h = h ^(h >> 16u);\n        return h;\n}"
+    }
+  ],
+  "parameters": [
+    {
+      "id": "d1d79071-d1e5-4fe0-b892-8bd41fcc5417",
+      "name": "GAMETYPE",
+      "expr": "1"
+    },
+    {
+      "id": "0a568031-495b-4fda-831c-8fd9ff54e55a",
+      "name": "g",
+      "expr": "9.81"
+    },
+    {
+      "id": "c7aeae56-64cd-430b-8ba8-6544522efbb2",
+      "name": "pi",
+      "expr": "3.14159"
+    },
+    {
+      "id": "3a34eefa-3640-4d1e-95d4-11d163865d89",
+      "name": "SIZEX",
+      "expr": "512"
+    },
+    {
+      "id": "a131eb7b-61cd-4ba4-8c94-24463a2a62db",
+      "name": "SIZEY",
+      "expr": "256"
+    },
+    {
+      "id": "59329a79-4922-49bb-92c8-98e954a55d21",
+      "name": "SIZEWORKX",
+      "expr": "8"
+    },
+    {
+      "id": "443a4873-dc03-4332-a0fa-16ac07f95e0b",
+      "name": "SIZEWORKY",
+      "expr": "8"
+    },
+    {
+      "id": "1048d299-f052-4cee-921b-8960a4b11ba4",
+      "name": "NBWORKX",
+      "expr": "SIZEX/SIZEWORKX"
+    },
+    {
+      "id": "2468934e-6efd-457e-93f5-57c37cea6acf",
+      "name": "NBWORKY",
+      "expr": "SIZEY/SIZEWORKY"
+    },
+    {
+      "id": "b42ddf0e-e83c-40e2-a5bc-6b17806f642c",
+      "name": "NBCURVE",
+      "expr": "180"
+    },
+    {
+      "id": "18d8799d-a038-4592-90de-b1cf4fb5a809",
+      "name": "NBPARAMCURVE",
+      "expr": "6"
+    },
+    {
+      "id": "e9950098-1ec2-4119-b4da-a7bdf06656db",
+      "name": "NBTERRAINPOINT",
+      "expr": "8"
+    }
+  ],
+  "pipeline": [
+    {
+      "type": "step",
+      "id": "204ba882-6422-4f8e-9d92-7016366c7755",
+      "name": "Pipeline Init",
+      "shaderId": "4b21c4f4-130f-4927-8494-5e3fd1e4df9c",
+      "activated": true,
+      "dispatch": {
+        "x": 8,
+        "y": 8,
+        "z": 1
+      },
+      "dispatchInput": {
+        "x": "SIZEWORKX",
+        "y": "SIZEWORKY",
+        "z": "1"
+      }
+    },
+    {
+      "type": "step",
+      "id": "b83244c9-b493-4676-84f2-57743e30a51d",
+      "name": "Pipeline Display",
+      "shaderId": "efcd35c5-52fe-4ffa-af63-6cde3893f240",
+      "activated": true,
+      "dispatch": {
+        "x": 8,
+        "y": 8,
+        "z": 1
+      },
+      "dispatchInput": {
+        "x": "SIZEWORKX",
+        "y": "SIZEWORKY",
+        "z": "1"
+      }
+    }
+  ],
+  "pipelineShaderChoiceId": "efcd35c5-52fe-4ffa-af63-6cde3893f240"
+}

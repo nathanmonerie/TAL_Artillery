@@ -1,0 +1,422 @@
+{
+  "version": 1,
+  "projectName": "TAL_Artillery",
+  "textures": [
+    {
+      "id": "tex-default",
+      "name": "Display",
+      "type": "vec3f",
+      "fill": "empty",
+      "size": {
+        "x": 512,
+        "y": 256,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "SIZEX",
+        "y": "SIZEY",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "0ce96281-8c6f-4830-bd4e-937144a403c2",
+      "name": "CurveData",
+      "type": "float",
+      "fill": "empty",
+      "size": {
+        "x": 13,
+        "y": 11,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "NBPARAMCURVE",
+        "y": "NBCURVE",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "dbc28fe0-edba-491d-abfe-fe5fb2f32c2f",
+      "name": "CurveMatrix",
+      "type": "vec4f",
+      "fill": "empty",
+      "size": {
+        "x": 512,
+        "y": 256,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "SIZEX",
+        "y": "SIZEY",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "acab4bac-da45-4303-88be-f23b8db35de3",
+      "name": "TerrainData",
+      "type": "int",
+      "fill": "empty",
+      "size": {
+        "x": 2,
+        "y": 16,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "2",
+        "y": "NBTERRAINPOINT",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "5abcbbd6-9df6-4fe4-ab14-a51f994e8dd6",
+      "name": "TerrainMatrix",
+      "type": "int",
+      "fill": "empty",
+      "size": {
+        "x": 512,
+        "y": 256,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "SIZEX",
+        "y": "SIZEY",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "d4138b69-1b0f-45cd-884b-f0d79be199a9",
+      "name": "Random",
+      "type": "uint",
+      "fill": "random",
+      "size": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "1",
+        "y": "1",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "9da514be-68f4-44ce-8ec4-ffcaa0093fad",
+      "name": "PlayerData",
+      "type": "float",
+      "fill": "empty",
+      "size": {
+        "x": 12,
+        "y": 2,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "NBPARAMPLAYER",
+        "y": "NBPLAYER",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "5d64e419-9907-4441-bdd6-0a86d8eb0ba0",
+      "name": "PointDisplayMatrix",
+      "type": "int",
+      "fill": "empty",
+      "size": {
+        "x": 2,
+        "y": 19,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "2",
+        "y": "TOTALPOINTDISPLAY",
+        "z": "1"
+      },
+      "values": []
+    },
+    {
+      "id": "94f0ffab-9911-4533-a628-b34c0da715c7",
+      "name": "GlobalVariables",
+      "type": "int",
+      "fill": "empty",
+      "size": {
+        "x": 10,
+        "y": 1,
+        "z": 1
+      },
+      "sizeInput": {
+        "x": "10",
+        "y": "0",
+        "z": "1"
+      },
+      "values": []
+    }
+  ],
+  "shaders": [
+    {
+      "id": "4b21c4f4-130f-4927-8494-5e3fd1e4df9c",
+      "name": "Init",
+      "workgroup": {
+        "x": 8,
+        "y": 8,
+        "z": 1
+      },
+      "code": "@compute @workgroup_size(SIZEWORKX, SIZEWORKY, 1)\nfn Init(@builtin(global_invocation_id) gid : vec3<u32>) {\n\t\tif (GlobalVariables[0] == 0 || step == 0){\n\t\t\t\tif (GAMETYPE==1){\n\t\t\t\t\t\tcurveInit();\n\t\t\t\t}\n\t\t\t\tif (gid.x == 0 && gid.y == 0){\n\t\t\t\t\t\tcurveReset();\n\t\t\t\t\t\tterrainMatrixReset(gid);\n\t\t\t\t\t\tterrainDataReset();\n\t\t\t\t\t\tpointDisplayInit();\n\t\t\t\t}\n\t\t\t\tcurveMatrixInit(gid);\n\t\t\t\tterrainInit();\n\t\t\t\tterrainFill(gid);\n\t\t\t\t\n\t\t\t\tplayerInit();\n\t\t\t\tGlobalVariables[4] = TIMERTIME*20;\n\n\t\t\t\tif (gid.x == SIZEX-1 && gid.y == SIZEY-1) { GlobalVariables[0] = 1; }\n\t\t}\n\t\tif (i32(step) == GlobalVariables[1]+2 ){ grassInit(gid); }\n}\n\nfn terrainDataReset() { \n\t\tfor (var i : i32 = 0; i < NBTERRAINPOINT; i++) {\n\t\t\t\tTerrainData[TDAccess(0,i)] = 0;\n\t\t\t\tTerrainData[TDAccess(1,i)] = 0;\n\t\t}\n}\n\nfn terrainMatrixReset(gid : vec3<u32>){ TerrainMatrix[TMAccess(i32(gid.x),i32(gid.y))] = 0; }\n\nfn curveReset() {\n\t\tvar y : i32 = 0;\n\t\tfor (var i : i32 = 0; i < NBCURVE; i++) {\n\t\t\t\tfor (var j : i32 = 0; j < NBPARAMCURVE; j++) {\n\t\t\t\t\t\tCurveData[CDAccess(j,i)] = 0;\n\t\t\t\t}\n\t\t}\n} \n\nfn curveInit() {\n\t\t//origine x, origine y, angle, velocité, r, g, b, temps de départ, état (à 0 de base, non réglable),  \n\t\t// collision x ( à -1 de base, non réglable), collision y ( à -1 de base, non réglable), step de l'explosion ( à -1 de base, non réglable)\n\n\t\tfor (var i : i32 = 0; i < NBCURVE; i++){\n\t\t\t\tCurveData[CDAccess(0,i)] = SIZEX/2;\n\t\t\t\tCurveData[CDAccess(1,i)] = SIZEY/2;\n\t\t\t\tCurveData[CDAccess(2,i)] = radians(f32(i*(360/NBCURVE)));\n\t\t\t\tCurveData[CDAccess(3,i)] = 55;\n\n\t\t\t\tCurveData[CDAccess(4,i)] = 0.99;\n\t\t\t\tCurveData[CDAccess(5,i)] = 0.99;\n\t\t\t\tCurveData[CDAccess(6,i)] = 0.99;\n\n\t\t\t\tCurveData[CDAccess(7,i)] = f32(i) +  f32(step);\n\t\t\t\tCurveData[CDAccess(8,i)] = 1;\n\n\t\t\t\tCurveData[CDAccess(9,i)] = -1;\n\t\t\t\tCurveData[CDAccess(10,i)] = -1;\n\t\t\t\tCurveData[CDAccess(11,i)] = -1;\n\t\t}\n}\n\nfn curveMatrixInit(gid : vec3<u32>){ CurveMatrix[CMAccess(i32(gid.x),i32(gid.y))] = vec4(0.0, 0.0, 0.0 ,0.0); }\n\nfn terrainInit() {\n\t\tfor (var i : i32 = 0; i < NBTERRAINPOINT; i++){\n\t\t\t\tTerrainData[TDAccess(0,i)] = ((SIZEX/(NBTERRAINPOINT-1))*i);\n\t\t\t\tTerrainData[TDAccess(1,i)] =\ti32( alea(u32(i), step%(SIZEY),Random[0] )%(SIZEY-4) )/2;\n\t\t}\n}\n\nfn terrainFill(gid : vec3<u32>) {\n\t\tvar terrainSeg : i32 = i32(floor( f32(i32(gid.x-1)/( SIZEX/(NBTERRAINPOINT-1) )) ));\n\t\tvar x1 = TerrainData[TDAccess(0,terrainSeg)];\n\t\tvar x2 = TerrainData[TDAccess(0,terrainSeg+1)];\n\t\tvar y1 =  TerrainData[TDAccess(1,terrainSeg)];\n\t\tvar y2 =  TerrainData[TDAccess(1,terrainSeg+1)];\n\n\t\tvar xp = 0;\n\t\tif (i32(gid.x) <= TerrainData[TDAccess(0,NBTERRAINPOINT-1)]){\n\t\t\t\txp = crossProduct(x1, x2, i32(gid.x), y1, y2 ,i32(gid.y));\n\t\t}else{\n\t\t\t\txp = crossProduct(x2, TerrainData[TDAccess(0,NBTERRAINPOINT-1)], i32(gid.x), y2, y2 ,i32(gid.y));\n\t\t}\n\n\t\tif (xp < 0){ TerrainMatrix[TMAccess(i32(gid.x),i32(gid.y))] = 2; }\n\t\telse{ TerrainMatrix[TMAccess(i32(gid.x),i32(gid.y))] = 0; }\n}\n\nfn grassInit(gid : vec3<u32>){\n\t\tif(gid.y < SIZEY/2){\n\t\t\t\tif (TerrainMatrix[TMAccess(i32(gid.x),i32(gid.y+2))] != 2 && TerrainMatrix[TMAccess(i32(gid.x),i32(gid.y))] == 2) { TerrainMatrix[TMAccess(i32(gid.x),i32(gid.y))] = 1; }\n\t\t\t\tif (gid.x > 1 && TerrainMatrix[TMAccess(i32(gid.x-1),i32(gid.y))] != 2 && TerrainMatrix[TMAccess(i32(gid.x),i32(gid.y))] == 2) { TerrainMatrix[TMAccess(i32(gid.x),i32(gid.y))] = 1; }\n\t\t\t\tif (gid.x < (SIZEX-1) && TerrainMatrix[TMAccess(i32(gid.x+1),i32(gid.y))] != 2 && TerrainMatrix[TMAccess(i32(gid.x),i32(gid.y))] == 2) { TerrainMatrix[TMAccess(i32(gid.x),i32(gid.y))] = 1; }\n\t\t}\n}\n\nfn playerInit(){\n\t\tPlayerData[PDAccess(0,0)] = (SIZEX/NBTERRAINPOINT)/2;\n\t\tPlayerData[PDAccess(1,0)] = SIZEY/2;\n\t\tPlayerData[PDAccess(2,0)] = PlayerData[PDAccess(0,0)];\n\t\tPlayerData[PDAccess(3,0)] = PlayerData[PDAccess(1,0)];\n\t\tPlayerData[PDAccess(4,0)] = 0;\n\t\tPlayerData[PDAccess(5,0)] = 45;\n\t\tPlayerData[PDAccess(6,0)] = 50;\n\t\tPlayerData[PDAccess(7,0)] = 0.99;\n\t\tPlayerData[PDAccess(8,0)] = 0.0;\n\t\tPlayerData[PDAccess(9,0)] = 0.0;\n\t\tPlayerData[PDAccess(10,0)] = 999;\n\n\t\tPlayerData[PDAccess(0,1)] = SIZEX-(SIZEX/NBTERRAINPOINT)/2;\n\t\tPlayerData[PDAccess(1,1)] = SIZEY/2;\n\t\tPlayerData[PDAccess(2,1)] = PlayerData[PDAccess(0,1)];\n\t\tPlayerData[PDAccess(3,1)] = PlayerData[PDAccess(1,1)];\n\t\tPlayerData[PDAccess(4,1)] = 0;\n\t\tPlayerData[PDAccess(5,1)] = 135;\n\t\tPlayerData[PDAccess(6,1)] = 50;\n\t\tPlayerData[PDAccess(7,1)] = 0.0;\n\t\tPlayerData[PDAccess(8,1)] = 0.0;\n\t\tPlayerData[PDAccess(9,1)] = 0.99;\n\t\tPlayerData[PDAccess(10,1)] = 999;\n}\n\nfn pointDisplayInit(){\n\t\tlet nbPointDisplayI32 : i32 = i32(NBPOINTDISPLAY);\n\t\tfor (var i : i32 = 0; i < nbPointDisplayI32 ; i++){\n\t\t\t\tfor (var j : i32 = 0; j < NBPOINTDISPLAYLINE; j++){\n\t\t\t\t\t\tPointDisplayMatrix[PDMAccess(0,i+(j*nbPointDisplayI32 ))] = (i*(DISPLAYSIZEX+2))+1;\n\t\t\t\t\t\tPointDisplayMatrix[PDMAccess(1,i+(j*nbPointDisplayI32 ))] = (SIZEY-1) - ((j*(DISPLAYSIZEY+2))+(DISPLAYSIZEY+2));\n\t\t\t\t}\n\t\t}\n}",
+      "bufferIds": [
+        "0ce96281-8c6f-4830-bd4e-937144a403c2",
+        "dbc28fe0-edba-491d-abfe-fe5fb2f32c2f",
+        "acab4bac-da45-4303-88be-f23b8db35de3",
+        "5abcbbd6-9df6-4fe4-ab14-a51f994e8dd6",
+        "d4138b69-1b0f-45cd-884b-f0d79be199a9",
+        "9da514be-68f4-44ce-8ec4-ffcaa0093fad",
+        "5d64e419-9907-4441-bdd6-0a86d8eb0ba0",
+        "94f0ffab-9911-4533-a628-b34c0da715c7"
+      ]
+    },
+    {
+      "id": "efcd35c5-52fe-4ffa-af63-6cde3893f240",
+      "name": "DisplayHandler",
+      "workgroup": {
+        "x": 8,
+        "y": 8,
+        "z": 1
+      },
+      "code": "@compute @workgroup_size(SIZEWORKX, SIZEWORKY, 1)\nfn DisplayHandler(@builtin(global_invocation_id) gid : vec3<u32>) {\n\t\tif (GlobalVariables[0] != 0 && i32(step) > GlobalVariables[0]+2) {\n\t\t\t\treset(gid);\n\t\t\t\tcurveDisplay(gid);\n\t\t\t\tterrainDisplay(gid);\n\t\t\t\tplayerDisplay(gid);\n\t\t\t\texplosionDisplay(gid,8);\n\t\t\t\ttimerDisplay();\n\t\t\t\tif (gid.x == SIZEX-1 && gid.y == SIZEY-1) { pointDisplayDisplay();}\n\t\t}\n}\n\nfn reset(gid : vec3<u32>){ Display[gid.y * SIZEX + gid.x] = vec3(0.0, 0.0, 0.0); } \n\nfn playerDisplay(gid : vec3<u32>){\n\t\tfor (var i : i32 = 0; i < NBPLAYER; i++) {\n\t\t\t\tlet life = PlayerData[PDAccess(10,i)];\n\t\t\t\tif (life > 0) {\n\t\t\t\t\t\tlet x = PlayerData[PDAccess(0,i)];\n\t\t\t\t\t\tlet y = PlayerData[PDAccess(1,i)];\n\t\t\t\t\t\tlet angle = PlayerData[PDAccess(5,i)];\n\t\t\t\t\t\t\n\t\t\t\t\t\tlet life = PlayerData[PDAccess(10,i)]; \t\t\t\t\t\t\n\n\t\t\t\t\t\tlet r = PlayerData[PDAccess(7,i)]*(0.5 + life/1998);\n\t\t\t\t\t\tlet g = PlayerData[PDAccess(8,i)]*(0.5 + life/1998);\n\t\t\t\t\t\tlet b = PlayerData[PDAccess(9,i)]*(0.5 + life/1998);\n\n\t\t\t\t\t\tlet xd = f32(gid.x) - x;\n\t\t\t\t\t\tlet yd = f32(gid.y) - y;\n\t\t\t\t\t\tlet d = sqrt(xd*xd + yd*yd);\n\n\t\t\t\t\t\tif (d < 4){\t\n\t\t\t\t\t\t\t\tDisplay[gid.y * SIZEX + gid.x] = vec3(r,g,b); \n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (i32(x+cos(radians(angle))*8) > 0 && i32(x+cos(radians(angle))*8) < SIZEX) { line(i32(x), i32(y), i32(x+cos(radians(angle))*8), i32(y+sin(radians(angle))*8), vec3(r,g,b)); }\n\t\t\t\t}\n\t\t}\n}\n\nfn line(x0 : i32, y0 : i32, x1 : i32, y1 : i32, col : vec3<f32>){\n\t\tvar locX0 = x0;\n\t\tvar locX1 = x1;\n\t\tvar locY0 = y0;\n\t\tvar locY1 = y1;\n\t\tvar steep = false;\n\n\t\tif (abs(locX0-locX1) < abs(locY0-locY1)) {\n\t\t\t\tvar temp = locX0;\n\t\t\t\tlocX0 = locY0;\n\t\t\t\tlocY0 = temp;\n\n\t\t\t\ttemp = locX1;\n\t\t\t\tlocX1 = locY1;\n\t\t\t\tlocY1 = temp;\n\n\t\t\t\tsteep = true;\n\t\t}\n\n\t\tif(locX0 > locX1){\n\t\t\t\tvar temp = locX0;\n\t\t\t\tlocX0 = locX1;\n\t\t\t\tlocX1 = temp;\n\n\t\t\t\ttemp = locY0;\n\t\t\t\tlocY0 = locY1;\n\t\t\t\tlocY1 = temp;\n\t\t}\n\n\t\tlet dx : i32 = locX1 - locX0;\n\t\tlet dy : i32 = locY1 - locY0;\n\t\tlet derror : f32 = abs(f32(dy)/f32(dx));\t\n\t\tvar error : f32 = 0;\n\t\tvar y : i32 = locY0;\n\n\t\tfor (var x : i32 = locX0; x <= locX1; x++) {\n\t\t\t\tif (steep) { Display[x*SIZEX + y] = col; }\n\t\t\t\telse { Display[y*SIZEX + x] = col; }\n\n\t\t\t\terror += derror;\n\t\t\t\tif (error > 0.5) {\n\t\t\t\t\t\tif (locY1 > locY0){ y += 1; }\n\t\t\t\t\t\telse{ y -= 1; }\n\t\t\t\t\t\terror -= 1.0;\n\t\t\t\t}\n\t\t}\n}\n\nfn curveDisplay(gid : vec3<u32>) {\n\t\tif (CurveMatrix[gid.y*SIZEX + gid.x][0] != 0.0 || CurveMatrix[gid.y*SIZEX + gid.x][1] != 0.0 || CurveMatrix[gid.y*SIZEX + gid.x][2] != 0.0) {\n\t\t\t\tfor (var i : i32 = 0; i < 3; i++) { \n\t\t\t\t\t\tlet curStep = f32(step) - CurveMatrix[gid.y*SIZEX + gid.x][3] ;\n\t\t\t\t\t\tif (curStep < 4) { Display[gid.y*SIZEX + gid.x][i] = CurveMatrix[gid.y*SIZEX + gid.x][i] / pow(2,curStep-1); }\n\t\t\t\t\t\telse {  Display[gid.y*SIZEX + gid.x] = vec3(0.0, 0.0, 0.0); }\n\t\t\t\t}\n\t\t}\n}\n\nfn explosionDisplay(gid : vec3<u32>, explosionSize : i32) {\n\t\tfor (var i :i32 = 0; i < NBCURVE; i++){\n\t\t\t\tif (CurveData[CDAccess(8,i)] == 3){\n\t\t\t\t\t\tlet x = CurveData[CDAccess(9,i)];\n\t\t\t\t\t\tlet y = CurveData[CDAccess(10,i)];\n\t\t\t\t\t\tlet curStep = f32(step) - CurveData[CDAccess(11,i)];\n\t\t\t\t\t\tlet explosionSize = CurveData[CDAccess(12,i)];\n\t\n\t\t\t\t\t\tlet r : f32 = CurveData[CDAccess(4,i)];\n\t\t\t\t\t\tlet g : f32 = CurveData[CDAccess(5,i)];\n\t\t\t\t\t\tlet b : f32 = CurveData[CDAccess(6,i)];\n\t\t\t\t\t\tlet col : vec3<f32> = vec3(r,g,b);\n\n\t\t\t\t\t\tlet xd = f32(gid.x) - x;\n\t\t\t\t\t\tlet yd = f32(gid.y) - y;\n\t\t\t\t\t\tlet d = sqrt(xd*xd + yd*yd);\n\n\t\t\t\t\t\tif (curStep > 0 && curStep < NBFADEFRAME+1){\n\t\t\t\t\t\t\t\tif (d < f32(explosionSize)){\t\n\t\t\t\t\t\t\t\t\t\tDisplay[gid.y * SIZEX + gid.x] = col; \n\t\t\t\t\t\t\t\t\t\tTerrainMatrix[TMAccess(i32(gid.x), i32(gid.y))] = 0;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (curStep > 0 && curStep < NBFADEFRAME+1){\n\t\t\t\t\t\t\t\tif( d < f32(explosionSize/NBFADEFRAME)*curStep ){ Display[gid.y * SIZEX + gid.x] = vec3(0.0, 0.0, 0.0); }\n\t\t\t\t\t\t}\n\t\t\t\t}\n\t\t}\n}\n\nfn terrainDisplay(gid : vec3<u32>) {\n\t\tif (TerrainMatrix[TMAccess(i32(gid.x), i32(gid.y))] == 1) { Display[gid.y * SIZEX + gid.x] = vec3(0.0, 0.5, 0.0); }\n\t\tif (TerrainMatrix[TMAccess(i32(gid.x), i32(gid.y))] == 2) { \n\t\t\t\tif ( ((gid.x/4)+(gid.y/4))%2 == 0){ Display[gid.y * SIZEX + gid.x] = vec3(0.3, 0.1, 0.1); }\n\t\t\t\telse { Display[gid.y * SIZEX + gid.x] = vec3(0.15, 0.05, 0.05); }\n\t\t}\n}\n\nfn timerDisplay() {\n\t\tlet curPlayer = GlobalVariables[2];\n\n\t\tlet r = PlayerData[PDAccess(7,curPlayer)];\n\t\tlet g = PlayerData[PDAccess(8,curPlayer)];\n\t\tlet b = PlayerData[PDAccess(9,curPlayer)];\n\n\t\tlet x = ((GlobalVariables[4]/TIMERTIME)*(SIZEX/TIMERTIME))/2;\n\t\tlet y = SIZEY - ((DISPLAYSIZEY+2)*NBPOINTDISPLAYLINE)-3;\n\n\t\tline(0, y, x, y, vec3(r,g,b));\n}\n\nfn pointDisplayDisplay() {\n\t\t/*if (GAMETYPE == 1){\n\t\t\t\tlet curPlayer = GlobalVariables[2];\n\n\t\t\t\tfor (var i = -26; i < 18; i++){\t\n\t\t\t\t\t\tpointDisplayWriter(i+26, i, vec3(0.9,0.9,0.9));\n\t\t\t\t}\n\t\t\t\t// x\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*1)+0, -24, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*1)+1, 15, vec3(0.9,0.9,0.9));\n\t\t\t\n\t\t\t\tvar px = PlayerData[PDAccess(0,curPlayer)];\n\t\t\t\tvar pxh = (px/100)%10;\n\t\t\t\tvar pxd = (px/10)%10;\n\t\t\t\tvar pxu = px%10;\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*1)+2, i32(pxh), vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*1)+3, i32(pxd), vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*1)+4, i32(pxu), vec3(0.9,0.9,0.9));\n\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*1)+6, -25, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*1)+7, 15, vec3(0.9,0.9,0.9));\n\n\t\t\t\t// y\n\t\t\t\tvar py = PlayerData[PDAccess(1,curPlayer)];\n\t\t\t\tvar pyh = (py/100)%10;\n\t\t\t\tvar pyd = (py/10)%10;\n\t\t\t\tvar pyu = py%10;\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*1)+8, i32(pyh), vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*1)+9, i32(pyd), vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*1)+10, i32(pyu), vec3(0.9,0.9,0.9));\n\n\t\t\t\t// velocity (power)\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+0, -16, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+1, -15, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+2, -23, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+3, -5, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+4, -18, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+5, 15, vec3(0.9,0.9,0.9));\n\n\t\t\t\tvar ppower = PlayerData[PDAccess(6,curPlayer)];\n\t\t\t\tvar ppowerh = (ppower/100)%10;\n\t\t\t\tvar ppowerd = (ppower/10)%10;\n\t\t\t\tvar ppoweru = ppower%10;\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+6, i32(ppowerh), vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+7, i32(ppowerd), vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+8, i32(ppoweru), vec3(0.9,0.9,0.9));\n\n\t\t\t\t// angle\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+10, -1, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+11, -14, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+12, -7, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+13, -12, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+14, -5, vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+15, 15, vec3(0.9,0.9,0.9));\n\n\t\t\t\tvar pangle = PlayerData[PDAccess(5,curPlayer)];\n\t\t\t\tvar pangleh = (pangle/100)%10;\n\t\t\t\tvar pangled = (pangle/10)%10;\n\t\t\t\tvar pangleu = pangle%10;\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+16, i32(pangleh), vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+17, i32(pangled), vec3(0.9,0.9,0.9));\n\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY*2)+18, i32(pangleu), vec3(0.9,0.9,0.9));\n\t\t}\n\t\telse {*/\n\t\t\t\tlet curPlayer = GlobalVariables[2];\n\t\t\t\tlet r = PlayerData[PDAccess(7,curPlayer)];\n\t\t\t\tlet g = PlayerData[PDAccess(8,curPlayer)];\n\t\t\t\tlet b = PlayerData[PDAccess(9,curPlayer)];\n\n\t\t\tif (GlobalVariables[0] == 1) {\n\t\t\t\t\t/*\n\t\t\t\t\t//player number\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY/2)-3, -16, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY/2)-2, -12, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY/2)-1, -1, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY/2), -25, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY/2)+1, -5, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY/2)+2, -18, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY/2)+4, curPlayer+1, vec3(r,g,b));\n\n\t\t\t\t\t//life\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2)-6, -12, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2)-5, -9, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2)-4, -6, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2)-3, -5, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2)-2, 15, vec3(0.9,0.9,0.9));\n\n\t\t\t\t\tvar life = PlayerData[PDAccess(10,curPlayer)];\n\t\t\t\t\tvar lifeh = (life/100)%10;\n\t\t\t\t\tvar lifed = (life/10)%10;\n\t\t\t\t\tvar lifeu = life%10;\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2)-1, i32(lifeh), vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2), i32(lifed), vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2)+1, i32(lifeu), vec3(0.9,0.9,0.9));\n\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2)+2, 17, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2)+3, 9, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2)+4, 9, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(i32(NBPOINTDISPLAY+NBPOINTDISPLAY/2)+5, 9, vec3(0.9,0.9,0.9));*/\n\t\t\t\t\n\t\t\t\t\t// velocity (power)\n\t\t\t\t\tpointDisplayWriter(0, -16, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(1, -15, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(2, -23, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(3, -5, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(4, -18, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(5, 15, vec3(0.9,0.9,0.9));\n\n\t\t\t\t\tvar power = PlayerData[PDAccess(6,curPlayer)];\n\t\t\t\t\tvar powerh = (power/100)%10;\n\t\t\t\t\tvar powerd = (power/10)%10;\n\t\t\t\t\tvar poweru = power%10;\n\t\t\t\t\tpointDisplayWriter(6, i32(powerh), vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(7, i32(powerd), vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(8, i32(poweru), vec3(0.9,0.9,0.9));\n\n\t\t\t\t\t// angle\n\t\t\t\t\tpointDisplayWriter(10, -1, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(11, -14, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(12, -7, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(13, -12, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(14, -5, vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(15, 15, vec3(0.9,0.9,0.9));\n\n\t\t\t\t\tvar angle = PlayerData[PDAccess(5,curPlayer)];\n\t\t\t\t\tvar angleh = (angle/100)%10;\n\t\t\t\t\tvar angled = (angle/10)%10;\n\t\t\t\t\tvar angleu = angle%10;\n\t\t\t\t\tpointDisplayWriter(16, i32(angleh), vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(17, i32(angled), vec3(0.9,0.9,0.9));\n\t\t\t\t\tpointDisplayWriter(18, i32(angleu), vec3(0.9,0.9,0.9));\n\t\t\t\t//}\n\t\t}\n\t\tif (GlobalVariables[0] == 2) {\n\t\t\t\t\t//player _ win!\n\t\t\t\t\tpointDisplayWriter(0, -16, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(1, -12, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(2, -1, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(3, -25, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(4, -5, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(5, -18, vec3(r,g,b));\n\n\t\t\t\t\tpointDisplayWriter(7, curPlayer+1, vec3(r,g,b));\n\n\t\t\t\t\tpointDisplayWriter(9, -23, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(10, -9, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(11, -14, vec3(r,g,b));\n\t\t\t\t\tpointDisplayWriter(12, 16, vec3(r,g,b));\n\n\t\t}\n}\n\nfn pointDisplayWriter(id : i32, car : i32, col : vec3<f32>){\n\t\tlet x = PointDisplayMatrix[PDMAccess(0,id)];\n\t\tlet y = PointDisplayMatrix[PDMAccess(1,id)];\n\t\t\n\t\tswitch car {\n\t\t\t\tdefault:{}\n\t\t\n\t\t\t\tcase -26: { //Z\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase -25: { //Y\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y+DISPLAYSIZEY, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY/2, col);\n\t\t\t\t}\n\n\t\t\t\tcase -24: { //X\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase -23: { //W\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y, col);\n\t\t\t\t}\n\n\t\t\t\tcase -22: { //V\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX/2, y, col);\n\t\t\t\t}\n\n\t\t\t\tcase -21: { //U\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase -20: { //T\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase -19: { //S\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX/2, y, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase -18: { //R\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x,y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y, col); \n\t\t\t\t}\n\n\t\t\t\tcase -17: { //Q\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y, col);\n\t\t\t\t}\n\n\t\t\t\tcase -16: { //P\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase -15: { //O\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase -14: { //N\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y, col);\n\t\t\t\t}\n\n\t\t\t\tcase -13: { //M\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y+DISPLAYSIZEY, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY/2, col);\n\t\t\t\t}\n\n\t\t\t\tcase -12: { //L\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t}\t\t\t\n\n\t\t\t\tcase -11: { //K\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y, col);\n\t\t\t\t}\n\n\t\t\t\tcase -10: { //J\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX/2, y, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY/2, col);\n\t\t\t\t}\n\n\t\t\t\tcase -9: {\t//I\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase -8: { //H\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase -7: { //G\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t}\n\n\t\t\t\tcase -6: { //F\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase -5: { //E\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase -4: { //D\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX/2, y, col);\t\t\t\t\t\t\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t}\n\n\t\t\t\tcase -3: { //C\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX/2, y, col);\n\t\t\t\t}\n\n\t\t\t\tcase -2: { //B\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX/2, y, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t}\n\n\t\t\t\tcase -1: { //A\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase 0: { //0\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase 1: { //1\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\tcase 2: { //2\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase 3: { //3\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\tcase 4: { //4\n\t\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\tcase 5: { //5\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase 6: { //6\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t}\n\n\t\t\t\tcase 7: { //7\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX/2, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t}\n\n\t\t\t\tcase 8: { //8\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y, x, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase 9: { //9\n\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\n\t\t\t\tcase 10: { //space\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\tcase 11: { //>\n\t\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX, y+DISPLAYSIZEY/2, col);\n\t\t\t\t}\n\n\t\t\t\tcase 12: { //<\n\t\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x, y+DISPLAYSIZEY/2, col);\n\t\t\t\t\t\t\tline(x+DISPLAYSIZEX, y+DISPLAYSIZEY, x, y+DISPLAYSIZEY/2, col);\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\tcase 13: { //up arrow\n\t\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t\t\t\tline(x+DISPLAYSIZEX, y, x+DISPLAYSIZEX/2, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\t\t\t\n\t\t\t\tcase 14: { //down arrow\n\t\t\t\t\t\t\tline(x, y+DISPLAYSIZEY, x+DISPLAYSIZEX/2, y, col);\n\t\t\t\t\t\t  line(x+DISPLAYSIZEX, y+DISPLAYSIZEY, x+DISPLAYSIZEX/2, y, col);\n\t\t\t\t}\n\n\t\t\t\tcase 15: { //:\n\t\t\t\t\t\t  line(x, y, x, y, col);\n\t\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x, y+DISPLAYSIZEY/2, col);\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\tcase 16: { //!\n\t\t\t\t\t\t\tline(x, y, x, y, col);\n\t\t\t\t\t\t\tline(x, y+DISPLAYSIZEY/2, x, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\t\t\t\tcase 17: { // /\n\t\t\t\t\t\t\tline(x, y, x+DISPLAYSIZEX, y+DISPLAYSIZEY, col);\n\t\t\t\t}\n\t\t}\n}",
+      "bufferIds": [
+        "tex-default",
+        "5abcbbd6-9df6-4fe4-ab14-a51f994e8dd6",
+        "dbc28fe0-edba-491d-abfe-fe5fb2f32c2f",
+        "0ce96281-8c6f-4830-bd4e-937144a403c2",
+        "5d64e419-9907-4441-bdd6-0a86d8eb0ba0",
+        "9da514be-68f4-44ce-8ec4-ffcaa0093fad",
+        "94f0ffab-9911-4533-a628-b34c0da715c7"
+      ]
+    },
+    {
+      "id": "ece0e9f4-4d42-4749-9af4-3de5c113a438",
+      "name": "CalculHandler",
+      "workgroup": {
+        "x": 8,
+        "y": 8,
+        "z": 1
+      },
+      "code": "@compute @workgroup_size(8, 8, 1)\nfn CalculHandler(@builtin(global_invocation_id) gid : vec3<u32>) {\n\t\tif (GlobalVariables[0] != 0 && i32(step) > GlobalVariables[0]+2) {\n\t\t\t\tif (gid.x == 0 && gid.y == 0 && GlobalVariables[0] != 2) { timerHandler(); }\n\t\t\t\tcurveCalc(gid);\n\t\t\t\tterrainPhysic(gid);\n\t\t\t\tdamageCalc(gid);\n\t\t}\n}\n\nfn timerHandler() {\n\t\tlet time =  GlobalVariables[4];\n\t\tif (time > 0) { GlobalVariables[4] -=1; }\n\t\tif (time == 0) { \n\t\t\t\tGlobalVariables[2] = (GlobalVariables[2]+1)%NBPLAYER;\n\t\t\t\tGlobalVariables[4] = TIMERTIME*20;\n\t\t\t\tGlobalVariables[5] = i32( alea(step%(SIZEX), step%(SIZEY),Random[0])%21 )- 10;\n\t\t}\n}\n\nfn damageCalc(gid : vec3<u32>){\n\t\tfor (var c : i32 = 0; c < NBCURVE; c++){\n\t\t\t\tif (CurveData[CDAccess(8,c)] == 3){\n\t\t\t\t\t\tlet xExp = CurveData[CDAccess(9,c)];\n\t\t\t\t\t\tlet yExp = CurveData[CDAccess(10,c)];\n\t\t\t\t\t\tlet curStep = f32(step) - CurveData[CDAccess(11,c)];\n\t\t\t\t\t\tlet explosionSize = CurveData[CDAccess(12,c)];\n\n\t\t\t\t\t\tif (curStep > 0 && curStep < NBFADEFRAME+1){\n\t\t\t\t\t\t\t\tfor (var p : i32 = 0; p < NBPLAYER; p++){\n\t\t\t\t\t\t\t\t\t\tlet xPla = PlayerData[PDAccess(0,p)];\n\t\t\t\t\t\t\t\t\t\tlet yPla = PlayerData[PDAccess(1,p)];\n\n\t\t\t\t\t\t\t\t\t\tlet xd = xPla - xExp;\n\t\t\t\t\t\t\t\t\t\tlet yd = yPla - yExp;\n\t\t\t\t\t\t\t\t\t\tlet d = sqrt(xd*xd + yd*yd);\n\t\n\t\t\t\t\t\t\t\t\t\tif (d < f32(explosionSize)){ \n\t\t\t\t\t\t\t\t\t\t\t\tif (gid.x == 0 && gid.y == 0){ PlayerData[PDAccess(10,p)] -= 500 - (d * (500/f32(explosionSize))); }\n\t\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t}\n\t\t}\n}\n\nfn curveCalc(gid : vec3<u32>) {\n\t\tfor (var i :i32 = 0; i < NBCURVE; i++){\n\t\t\t\t//curveUpdate(i);\n\n\t\t\t\tvar x0 : i32 = i32(CurveData[CDAccess(0,i)]);\n\t\t\t\tvar y0 : i32 = i32(CurveData[CDAccess(1,i)]);\n\t\t\t\tvar angle : f32 = CurveData[CDAccess(2,i)];\n\t\t\t\tvar velocity : u32 = u32(CurveData[CDAccess(3,i)]);\n\n\t\t\t\tvar r : f32 = CurveData[CDAccess(4,i)];\n\t\t\t\tvar g : f32 = CurveData[CDAccess(5,i)];\n\t\t\t\tvar b : f32 = CurveData[CDAccess(6,i)];\n\t\t\t\tvar col : vec3<f32> = vec3(r,g,b);\n\t\t\n\t\t\t\tvar start : u32 = u32(CurveData[CDAccess(7,i)]);\n\n\t\t\t\tvar collisionsCoord : vec2<i32> = vec2(-1, -1);\n\n\t\t\t\tlet curX = nextX(x0, velocity, angle, step - start);\n\t\t\t\tlet curY = nextY(y0, velocity, angle, step - start );\n\t\t\t\t\n\t\t\t\tif (step > start && CurveData[CDAccess(8,i)] == 1){\n\t\t\t\t\t\tCurveData[CDAccess(8,i)] = 2;\n\t\t\t\t}\n\t\t\t\tif (CurveData[CDAccess(8,i)] == 2){\n\t\t\t\t\t\tlet prevX1 = nextX(x0, velocity, angle,(step - start) - 1);\n\t\t\t\t\t\tlet prevY1 = nextY(y0, velocity, angle,(step - start) - 1);\n\t\t\t\t\t\tcollisionsCoord = curve(gid, prevX1, curX, prevY1, curY, col);\n\t\t\t\t}\n\t\t\t\t\n\t\t\t\tif (collisionsCoord.x != -1 && collisionsCoord.y != -1 && CurveData[CDAccess(8,i)] == 2){\n\t\t\t\t\t\tCurveData[CDAccess(8,i)] = 3;\n\t\t\t\t\t\tCurveData[CDAccess(9,i)] = f32(collisionsCoord.x);\n\t\t\t\t\t\tCurveData[CDAccess(10,i)] = f32(collisionsCoord.y);\n\t\t\t\t\t\tCurveData[CDAccess(11,i)] = f32(step);\n\t\t\t\t}\n\n\t\t\t\tif (TerrainMatrix[TMAccess(x0,y0)] != 0 && CurveData[CDAccess(8,i)] == 2){\n\t\t\t\t\t\tCurveData[CDAccess(8,i)] = 3;\n\t\t\t\t\t\tCurveData[CDAccess(9,i)] = f32(x0);\n\t\t\t\t\t\tCurveData[CDAccess(10,i)] = f32(y0);\n\t\t\t\t\t\tCurveData[CDAccess(11,i)] = f32(step);\n\t\t\t\t}\n\t\t}\n}\n\nfn curveUpdate(i : i32){\n\t\tCurveData[CDAccess(0,i)] = PlayerData[CDAccess(1,0)];\n\t\tCurveData[CDAccess(1,i)] = PlayerData[CDAccess(2,0)];\n}\n\nfn terrainPhysic(gid : vec3<u32>) {\n\t\tlet x = i32(gid.x);\n\t\tlet y = i32(gid.y);\n\t\tif (y > 0){\n\t\t\t\tif (TerrainMatrix[TMAccess(x,y)] == 1 && TerrainMatrix[TMAccess(x,y-1)] == 0){\n\t\t\t\t\t\t TerrainMatrix[TMAccess(x,y)] = 0;\n\t\t\t\t\t\t TerrainMatrix[TMAccess(x,y-1)] = 1;\n\t\t\t  }\n\t\t\t\tif (TerrainMatrix[TMAccess(x,y)] == 2 && TerrainMatrix[TMAccess(x,y-1)] == 0){\n\t\t\t\t\t\t TerrainMatrix[TMAccess(x,y)] = 0;\n\t\t\t\t\t\t TerrainMatrix[TMAccess(x,y-1)] = 2;\n\t\t\t  }\n\t\t}\n}\n\nfn curve(gid : vec3<u32>, x0 : i32, x1 : i32, y0 : i32, y1 : i32, col : vec3<f32>) -> vec2<i32>{\n    let dx = abs(x1 - x0);\n    let dy = abs(y1 - y0);\n    var sx = 0;\n    var sy = 0;\n    if (x0 < x1){ sx = 1; } else { sx = -1; }\n    if (y0 < y1){ sy = 1; } else { sy = -1; }\n    var err = dx - dy;\n    var x = x0;\n    var y = y0;\n    while (x != x1 && y != y1) {\n\t\t\t\tif (x > 0 && x < (SIZEX-1) && y > 0 && TerrainMatrix[TMAccess(x,y)] == 0){\n\t\t\t\t\t\tif ( y < (SIZEY-((DISPLAYSIZEY+2)*NBPOINTDISPLAYLINE)-3 )) { CurveMatrix[y*SIZEX + x] = vec4(col.x, col.y, col.z, f32(step)); } ;\n       \t\t  var e2 = 2 * err;\n        \t\tif (e2 > -dy) {\n           \t\t err -= dy;\n           \t\t x += sx;\n        \t\t}\n       \t\t if (e2 < dx) {\n            \t\terr += dx;\n            \t\ty += sy;\n         \t\t}\n\t\t\t\t}else{\n\t\t\t\t\t\tDisplay[y*SIZEX + x] = col;\n\t\t\t\t\t\treturn vec2(x, y);\n\t\t\t\t}\n     }\n\t\treturn vec2(-1,-1);\n}\n\nfn nextX(x0: i32, v0 : u32, angle : f32, t : u32) -> i32 {\n\t\treturn x0 + i32(f32(v0*t)*cos(angle));\n}\n\nfn nextY(y0 : i32, v0 : u32, angle : f32, t : u32) -> i32 {\n\treturn y0 + i32(f32(v0*t)*sin(angle) - 0.5*g*f32(t*t));\n}",
+      "bufferIds": [
+        "0ce96281-8c6f-4830-bd4e-937144a403c2",
+        "dbc28fe0-edba-491d-abfe-fe5fb2f32c2f",
+        "acab4bac-da45-4303-88be-f23b8db35de3",
+        "5abcbbd6-9df6-4fe4-ab14-a51f994e8dd6",
+        "9da514be-68f4-44ce-8ec4-ffcaa0093fad",
+        "94f0ffab-9911-4533-a628-b34c0da715c7",
+        "tex-default",
+        "d4138b69-1b0f-45cd-884b-f0d79be199a9"
+      ]
+    },
+    {
+      "id": "847cd508-cbc5-4af3-ad26-b4f9598d5eed",
+      "name": "PlayerHandler",
+      "workgroup": {
+        "x": 8,
+        "y": 8,
+        "z": 1
+      },
+      "code": "@compute @workgroup_size(8, 8, 1)\nfn PlayerHandler(@builtin(global_invocation_id) gid : vec3<u32>) {\n\t\tif (GlobalVariables[0] == 1 && i32(step) > GlobalVariables[0]+2) {\t\t\n\t\t\t\tunblock();\n\t\t\t\tinputMov(gid);\n\t\t\t\tinputCannon(gid);\n\t\t\t\tplayerPhysic();\n\t\t\t\ttargerPhysic();\n\t\t}\n\t\tdeathHandler();\n\n\t\tif (gid.x + gid.y == 0 && GlobalVariables[3] != 0) { GlobalVariables[3] -= 1; }\n\n\t\tif (GlobalVariables[0] == 2) {\n\t\t\t\tif (key == 0x20 && GlobalVariables[3] == 0){ // Space\n\t\t\t\t\tGlobalVariables[0] = 0;\n\t\t\t\t\tGlobalVariables[1] = i32(step);\n\t\t\t\t\tGlobalVariables[3] = 10;\n\t\t\t\t}\n\t\t}\n}\n\nfn deathHandler() {\n\t\tlet curPlayer = GlobalVariables[2];\n\n\t\tif (PlayerData[PDAccess(10,curPlayer)] <= 0) {\n\t\t\tGlobalVariables[4] = TIMERTIME*20;\n\n\t\t\tPlayerData[PDAccess(10,curPlayer)] = 0;\n\n\t\t\tCurveData[CDAccess(0,curPlayer*5)] = PlayerData[PDAccess(0,curPlayer)];\n\t\t\tCurveData[CDAccess(1,curPlayer*5)] = PlayerData[PDAccess(1,curPlayer)];\n\n\t\t\tCurveData[CDAccess(2,curPlayer*5)] = 0;\n\t\t\tCurveData[CDAccess(3,curPlayer*5)] = 1;\n\n\t\t\tCurveData[CDAccess(4,curPlayer*5)] = PlayerData[PDAccess(7,curPlayer)];\n\t\t\tCurveData[CDAccess(5,curPlayer*5)] = PlayerData[PDAccess(8,curPlayer)];\n\t\t\tCurveData[CDAccess(6,curPlayer*5)] = PlayerData[PDAccess(9,curPlayer)];\n\n\t\t\tCurveData[CDAccess(7,curPlayer*5)] = f32(step);\n\t\t\tCurveData[CDAccess(8,curPlayer*5)] = 1;\n\n\t\t\tCurveData[CDAccess(9,curPlayer*5)] = PlayerData[PDAccess(0,curPlayer)];\n\t\t\tCurveData[CDAccess(10,curPlayer*5)] = PlayerData[PDAccess(1,curPlayer)];\n\t\t\tCurveData[CDAccess(11,curPlayer*5)] = -1;\n\n\t\t\tCurveData[CDAccess(12,curPlayer*5)] = 16;\n\t\t\t\n\t\t\tGlobalVariables[2] = (GlobalVariables[2]+1)%NBPLAYER;\n\t\t\tGlobalVariables[0] = 2;\n\t\t}\n}\n\nfn unblock() {\n\t\tvar isActive = false;\n\t\tfor (var i : i32 = 0; i < NBCURVE; i++){\n\t\t\t\tif (CurveData[CDAccess(8,i)] == 2) { isActive = true; }\n\t\t}\n\t\tfor (var i : i32 = 0; i < NBPLAYER; i++) {\n\t\t\t\tif (!isActive){\n\t\t\t\t\t\tPlayerData[PDAccess(4,i)] = 0;\n\t\t\t\t}\n\t\t\t\telse { PlayerData[PDAccess(4,i)] = 1;}\n\t\t}\n}\n\nfn inputCannon(gid : vec3<u32>) {\n\t\tlet curPlayer = GlobalVariables[2];\n\n\t\tif (PlayerData[PDAccess(4,curPlayer )] == 0){\n\t\t\t\tif (gid.x == 0 && gid.y == 0){\n\t\t\t\t\t\tif (key == 0x28){ // Arrow down\n\t\t\t\t\t\t\t\tif (PlayerData[PDAccess(5,curPlayer)] == 0) { PlayerData[PDAccess(5,curPlayer)] = 360; }\n\t\t\t\t\t\t\t\tPlayerData[PDAccess(5,curPlayer)] -= 1;\n\t\t\t\t\t\t}\n\t\t\t\t\n\t\t\t\t\t\tif (key == 0x26){ // Arrow up\n\t\t\t\t\t\t\t\tPlayerData[PDAccess(5,curPlayer)] = (PlayerData[PDAccess(5,curPlayer)]+1)%360;\n\t\t\t\t\t\t}\n\t\t\t\t\n\t\t\t\t\t\tif (key == 0x58 && PlayerData[PDAccess(6,curPlayer)] > 0) /*X*/ { PlayerData[PDAccess(6,curPlayer)] -= 1; }\n\t\t\t\t\n\t\t\t\t\t\tif (key == 0x57 && PlayerData[PDAccess(6,curPlayer)] < 100) /*W*/ { PlayerData[PDAccess(6,curPlayer)] += 1; }\n\n\t\t\t\t\t\tif (key == 0x20){ // Space\n\t\t\t\t\t\t\t\tif (GlobalVariables[3] == 0) {\n\t\t\t\t\t\t\t\t\t\tGlobalVariables[3] = 10;\n\n\t\t\t\t\t\t\t\t\t\tlet x = PlayerData[PDAccess(0,curPlayer)];\n\t\t\t\t\t\t\t\t\t\tlet y = PlayerData[PDAccess(1,curPlayer)];\n\t\t\t\t\t\t\t\t\t\tlet angle = PlayerData[PDAccess(5,curPlayer)];\n\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\tfor (var i : i32 = 0; i < NBPLAYER; i++) { PlayerData[PDAccess(4,i)] = 1; }\n\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(0,curPlayer*5)] = x+cos(radians(angle))*8;\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(1,curPlayer*5)] = y+sin(radians(angle))*8;\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(2,curPlayer*5)] = radians(angle);\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(3,curPlayer*5)] = PlayerData[PDAccess(6,curPlayer)];\n\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(4,curPlayer*5)] = PlayerData[PDAccess(7,curPlayer)];\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(5,curPlayer*5)] = PlayerData[PDAccess(8,curPlayer)];\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(6,curPlayer*5)] = PlayerData[PDAccess(9,curPlayer)];\n\t\t\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(7,curPlayer*5)] = f32(step);\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(8,curPlayer*5)] = 1;\n\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(9,curPlayer*5)] = -1;\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(10,curPlayer*5)] = -1;\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(11,curPlayer*5)] = -1;\n\n\t\t\t\t\t\t\t\t\t\tCurveData[CDAccess(12,curPlayer*5)] = 8;\n\n\t\t\t\t\t\t\t\t\t\tGlobalVariables[4] = TIMERTIME*20;\n\t\t\t\t\t\t\t\t\t\tGlobalVariables[2] = (GlobalVariables[2]+1)%NBPLAYER;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t}\n\t\t}\n}\n\nfn inputMov(gid : vec3<u32>) {\n\t\tlet curPlayer = GlobalVariables[2];\n\n\t\tlet x = i32(PlayerData[PDAccess(0,curPlayer)]);\n\t\tlet y = i32(PlayerData[PDAccess(1,curPlayer)]);\n\n\t\tlet yTarg = i32(PlayerData[PDAccess(3,curPlayer)]);\n\t\tlet xTarg = i32(PlayerData[PDAccess(2,curPlayer)]);\n\n\t\tif (PlayerData[PDAccess(4,curPlayer)] == 0){\n\t\t\t\tif (gid.x == 0 && gid.y == 0){\n\t\t\t\t\t\tif (key == 0x27 && x < (SIZEX-1) ){ // Arrow right\n\t\t\t\t\t\t\t\tif (yTarg - y > 1 && xTarg - x > 0){\n\t\t\t\t\t\t\t\t\t\tPlayerData[PDAccess(1,curPlayer)] += 1;\n\t\t\t\t\t\t\t\t}else{\n\t\t\t\t\t\t\t\t\t\tPlayerData[PDAccess(0,curPlayer)] += 1;\n\t\t\t\t\t\t\t\t\t\tPlayerData[PDAccess(2,curPlayer)] = PlayerData[PDAccess(0,curPlayer )]+1;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tif (key == 0x25 && x > 0){ // Arrow left\n\t\t\t\t\t\t\t\tif (yTarg - y > 1 && xTarg - x < 0){\n\t\t\t\t\t\t\t\t\t\tPlayerData[PDAccess(1,curPlayer)] += 1;\n\t\t\t\t\t\t\t\t}else{\n\t\t\t\t\t\t\t\t\t\tPlayerData[PDAccess(0,curPlayer)] -= 1;\n\t\t\t\t\t\t\t\t\t\tPlayerData[PDAccess(2,curPlayer)] = PlayerData[PDAccess(0,curPlayer)]-1;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t}\n\t\t}\n}\n\nfn playerPhysic(){\n\t\tfor (var i : i32 = 0; i < NBPLAYER; i++) {\n\t\t\t\tlet x = i32(PlayerData[PDAccess(0,i)]);\n\t\t\t\tlet y = i32(PlayerData[PDAccess(1,i)]);\n\n\t\t\t\tlet yTarg = i32(PlayerData[PDAccess(3,i)]);\n\t\t\t\tif (yTarg - y < 1){\n\t\t\t\t\t\tif (TerrainMatrix[TMAccess(x,y-1)] == 0 && y>0){ PlayerData[PDAccess(1,i)] -= 1; }\n\t\t\t\t\t\tif (TerrainMatrix[TMAccess(x,y)] != 0){ PlayerData[PDAccess(1,i)] += 1; }\n\t\t\t\t}\n\t\t}\n}\n\nfn targerPhysic(){\n\t\tfor (var i : i32 = 0; i < NBPLAYER; i++) {\n\t\t\t\tlet xTarg = i32(PlayerData[PDAccess(2,i)]);\n\t\t\t\tlet yTarg = i32(PlayerData[PDAccess(3,i)]);\n\n\t\t\t\tif (TerrainMatrix[TMAccess(xTarg,yTarg-1)] == 0 && yTarg>0){ PlayerData[PDAccess(3,i)] -= 1; }\n\t\t\t\tif (TerrainMatrix[TMAccess(xTarg,yTarg)] != 0){ PlayerData[PDAccess(3,i)] += 1; }\n\t\t}\n}",
+      "bufferIds": [
+        "9da514be-68f4-44ce-8ec4-ffcaa0093fad",
+        "5abcbbd6-9df6-4fe4-ab14-a51f994e8dd6",
+        "0ce96281-8c6f-4830-bd4e-937144a403c2",
+        "94f0ffab-9911-4533-a628-b34c0da715c7",
+        "d4138b69-1b0f-45cd-884b-f0d79be199a9"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "id": "6410ae56-c9f1-4117-b3aa-c376ffc0479b",
+      "name": "Bibliothèque 1",
+      "code": "fn crossProduct(x1 : i32, x2 : i32, x3 : i32, y1 : i32, y2 : i32, y3 : i32) -> i32 {\n\t\tvar v1 : vec2<i32>;\n\t\tv1[0] = x1 - x2;\n\t\tv1[1] = y1 - y2;\n\t\tvar v2 : vec2<i32>;\n\t\tv2[0] = x2 - x3;\n\t\tv2[1] = y2 - y3;\n\n\t\treturn  (v1[0]*v2[1]) - (v1[1]*v2[0]);\n}\n\nfn CDAccess(x : i32, y : i32) -> i32 {\n\t\treturn y*NBPARAMCURVE + x;\n}\n\nfn TDAccess(x : i32, y : i32) -> i32 {\n\t\treturn y*2 + x;\n}\n\nfn TMAccess(x : i32, y : i32) -> i32 {\n\t\treturn y*SIZEX + x;\n}\n\nfn CMAccess(x : i32, y : i32) -> i32 {\n\t\treturn y*SIZEX + x;\n}\n\nfn PDAccess(x : i32, y : i32) -> i32 {\n\t\treturn y*NBPARAMPLAYER + x;\n}\n\nfn PDMAccess(x : i32, y : i32) -> i32 {\n\t\treturn y*2 + x;\n}\n\nfn alea(x: u32, y: u32, step: u32) -> u32 {\n        var h: u32 = x;\n        h = h * 374761393u + y * 668265263u + step * 362437u;\n        h = (h ^(h >> 13u)) * 1274126177u;\n        h = h ^(h >> 16u);\n        return h;\n}"
+    }
+  ],
+  "parameters": [
+    {
+      "id": "d1d79071-d1e5-4fe0-b892-8bd41fcc5417",
+      "name": "GAMETYPE",
+      "expr": "0"
+    },
+    {
+      "id": "0a568031-495b-4fda-831c-8fd9ff54e55a",
+      "name": "g",
+      "expr": "9.81"
+    },
+    {
+      "id": "c7aeae56-64cd-430b-8ba8-6544522efbb2",
+      "name": "pi",
+      "expr": "3.14159"
+    },
+    {
+      "id": "3a34eefa-3640-4d1e-95d4-11d163865d89",
+      "name": "SIZEX",
+      "expr": "512"
+    },
+    {
+      "id": "a131eb7b-61cd-4ba4-8c94-24463a2a62db",
+      "name": "SIZEY",
+      "expr": "SIZEX/2"
+    },
+    {
+      "id": "59329a79-4922-49bb-92c8-98e954a55d21",
+      "name": "SIZEWORKX",
+      "expr": "8"
+    },
+    {
+      "id": "443a4873-dc03-4332-a0fa-16ac07f95e0b",
+      "name": "SIZEWORKY",
+      "expr": "8"
+    },
+    {
+      "id": "1048d299-f052-4cee-921b-8960a4b11ba4",
+      "name": "NBWORKX",
+      "expr": "SIZEX/SIZEWORKX"
+    },
+    {
+      "id": "2468934e-6efd-457e-93f5-57c37cea6acf",
+      "name": "NBWORKY",
+      "expr": "SIZEY/SIZEWORKY"
+    },
+    {
+      "id": "b42ddf0e-e83c-40e2-a5bc-6b17806f642c",
+      "name": "NBCURVE",
+      "expr": "11"
+    },
+    {
+      "id": "18d8799d-a038-4592-90de-b1cf4fb5a809",
+      "name": "NBPARAMCURVE",
+      "expr": "13"
+    },
+    {
+      "id": "e9950098-1ec2-4119-b4da-a7bdf06656db",
+      "name": "NBTERRAINPOINT",
+      "expr": "16"
+    },
+    {
+      "id": "af8e5751-a936-4964-b677-a07a29618399",
+      "name": "NBFADEFRAME",
+      "expr": "4"
+    },
+    {
+      "id": "b1fcd9f3-0c68-4d6a-bd48-7952bb7afdcc",
+      "name": "NBPARAMPLAYER",
+      "expr": "12"
+    },
+    {
+      "id": "a4058efc-b4eb-446c-8a0e-bba02423bb98",
+      "name": "NBPLAYER",
+      "expr": "2"
+    },
+    {
+      "id": "9fc5fda0-f1e6-45e7-8e14-12ed0bc7e42b",
+      "name": "DISPLAYSIZEX",
+      "expr": "4"
+    },
+    {
+      "id": "168cb888-7cc9-433f-bd37-3735588300de",
+      "name": "DISPLAYSIZEY",
+      "expr": "4"
+    },
+    {
+      "id": "a3674485-30d9-46ea-9875-897088513229",
+      "name": "NBPOINTDISPLAY",
+      "expr": "19"
+    },
+    {
+      "id": "69b46c19-8ed0-481e-8492-73e35508fdf0",
+      "name": "NBPOINTDISPLAYLINE",
+      "expr": "1"
+    },
+    {
+      "id": "96b8d290-d228-4936-8fcf-3b5ad4ffa9ff",
+      "name": "TOTALPOINTDISPLAY",
+      "expr": "NBPOINTDISPLAY*NBPOINTDISPLAYLINE"
+    },
+    {
+      "id": "2df26a1d-7e66-472a-b174-6cde6945502c",
+      "name": "TIMERTIME",
+      "expr": "10"
+    }
+  ],
+  "pipeline": [
+    {
+      "type": "step",
+      "id": "204ba882-6422-4f8e-9d92-7016366c7755",
+      "name": "Pipeline Init",
+      "shaderId": "4b21c4f4-130f-4927-8494-5e3fd1e4df9c",
+      "activated": true,
+      "dispatch": {
+        "x": 64,
+        "y": 32,
+        "z": 1
+      },
+      "dispatchInput": {
+        "x": "NBWORKX",
+        "y": "NBWORKY",
+        "z": "1"
+      }
+    },
+    {
+      "type": "step",
+      "id": "b83244c9-b493-4676-84f2-57743e30a51d",
+      "name": "Pipeline Display",
+      "shaderId": "efcd35c5-52fe-4ffa-af63-6cde3893f240",
+      "activated": true,
+      "dispatch": {
+        "x": 64,
+        "y": 32,
+        "z": 1
+      },
+      "dispatchInput": {
+        "x": "NBWORKX",
+        "y": "NBWORKY",
+        "z": "1"
+      }
+    },
+    {
+      "type": "step",
+      "id": "ea141389-893a-4911-ac66-0321aa4fd4b5",
+      "name": "Pipeline Calcul",
+      "shaderId": "ece0e9f4-4d42-4749-9af4-3de5c113a438",
+      "activated": true,
+      "dispatch": {
+        "x": 64,
+        "y": 32,
+        "z": 1
+      },
+      "dispatchInput": {
+        "x": "NBWORKX",
+        "y": "NBWORKY",
+        "z": "1"
+      }
+    },
+    {
+      "type": "step",
+      "id": "5cd14008-a3a0-46ef-8dc2-e3add5a12d4b",
+      "name": "Pipeline Player",
+      "shaderId": "847cd508-cbc5-4af3-ad26-b4f9598d5eed",
+      "activated": true,
+      "dispatch": {
+        "x": 64,
+        "y": 32,
+        "z": 1
+      },
+      "dispatchInput": {
+        "x": "NBWORKX",
+        "y": "NBWORKY",
+        "z": "1"
+      }
+    }
+  ],
+  "pipelineShaderChoiceId": "847cd508-cbc5-4af3-ad26-b4f9598d5eed"
+}
